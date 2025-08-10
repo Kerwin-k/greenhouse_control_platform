@@ -1,4 +1,4 @@
-[查看中文版 (View Chinese Version)](README_zh.md)
+[查看中文版 (View Chinese Version)](README_zh-CN.md)
 
 ---
 # A Scalable IoT Smart Greenhouse Cluster Management Platform
