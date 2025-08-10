@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>智能温室集群管控平台</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <h1>智能温室集群管控平台</h1>
+
+    <div id="global-controls" style="display: none;">
+        <h4>全局控制面板</h4>
+        <div class="global-buttons">
+            <button class="global-btn" data-action="mode" data-value="auto">全部设为自动</button>
+            <button class="global-btn" data-action="mode" data-value="manual">全部设为手动</button>
+            <button class="global-btn" data-action="light" data-value="ON">全局开灯</button>
+            <button class="global-btn" data-action="light" data-value="OFF">全局关灯</button>
+        </div>
+        <div class="global-weather">
+            <button id="refresh-weather-btn">刷新天气建议</button>
+            <p id="weather-result">点击按钮获取最新的天气联动建议。</p>
+        </div>
+    </div>
+
+    <div class="greenhouse-container" id="greenhouse-container">
+        <div class="loader" id="loading-indicator">
+            <div class="spinner"></div>
+            <p>正在连接并等待来自温室节点的第一条数据...</p>
+        </div>
+    </div>
+
+    <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+</body>
+</html>
