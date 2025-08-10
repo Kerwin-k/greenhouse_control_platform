@@ -1,3 +1,6 @@
+[View English Version (查看英文版)](README.md)
+
+---
 # 可扩展的物联网智能温室集群管控平台
 ### A Scalable IoT Smart Greenhouse Cluster Management Platform
 
