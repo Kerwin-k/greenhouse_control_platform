@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Temperature and Humidity Data from Microcontrollers</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f9;
+        }
+        .chart-container {
+            width: 90%;
+            max-width: 900px;
+            margin: 30px auto;
+            border: 1px solid #ddd;
+            padding: 20px;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        canvas {
+            width: 100% !important;
+            height: 300px !important;
+        }
+        .nav-container {
+            text-align: center;
+            margin: 20px;
+        }
+        .nav-button {
+            text-decoration: none;
+            padding: 10px 25px;
+            background-color: #007BFF;
+            color: white;
+            border-radius: 5px;
+            font-size: 16px;
+            font-weight: bold;
+            transition: background-color 0.2s;
+        }
+        .nav-button:hover {
+            background-color: #0056b3;
+        }
+    </style>
+</head>
+<body>
+<h1 style="text-align:center;">Temperature and Humidity Data from Microcontrollers</h1>
+
+<!-- --- 新增的导航入口 --- -->
+<div class="nav-container">
+    <a href="/status" class="nav-button">Back to Device Control</a>
+</div>
+
+<div id="charts">
+    <!-- JS will dynamically generate canvas containers here -->
+</div>
+
+<script>
+    const data = {{ data | tojson }};
+    const chartsDiv = document.getElementById('charts');
+
+    Object.keys(data).forEach(gh_id => {
+        // 创建容器和canvas
+        const container = document.createElement('div');
+        container.className = 'chart-container';
+
+        const title = document.createElement('h2');
+        title.textContent = `Device ID: ${gh_id}`;
+        container.appendChild(title);
+
+        const canvas = document.createElement('canvas');
+        canvas.id = `chart_${gh_id}`;
+        container.appendChild(canvas);
+
+        chartsDiv.appendChild(container);
+    });
+
+    // 绘制图表
+    Object.keys(data).forEach(gh_id => {
+        const ctx = document.getElementById('chart_' + gh_id).getContext('2d');
+
+        new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: data[gh_id].time,
+                datasets: [
+                    {
+                        label: 'Temperature (°C)',
+                        data: data[gh_id].temperature,
+                        borderColor: 'rgba(255,99,132,1)',
+                        backgroundColor: 'rgba(255,99,132,0.2)',
+                        yAxisID: 'y1',
+                        tension: 0.3,
+                        pointRadius: 0
+                    },
+                    {
+                        label: 'Humidity (%)',
+                        data: data[gh_id].humidity,
+                        borderColor: 'rgba(54,162,235,1)',
+                        backgroundColor: 'rgba(54,162,235,0.2)',
+                        yAxisID: 'y2',
+                        tension: 0.3,
+                        pointRadius: 0
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                interaction: {
+                    mode: 'index',
+                    intersect: false,
+                },
+                stacked: false,
+                scales: {
+                    y1: {
+                        type: 'linear',
+                        position: 'left',
+                        title: { display: true, text: 'Temperature (°C)' }
+                    },
+                    y2: {
+                        type: 'linear',
+                        position: 'right',
+                        title: { display: true, text: 'Humidity (%)' },
+                        grid: { drawOnChartArea: false }
+                    },
+                    x: {
+                        title: { display: true, text: 'Time' },
+                        ticks: {
+                            maxRotation: 45,
+                            minRotation: 45,
+                        }
+                    }
+                },
+                plugins: {
+                    legend: { position: 'top' },
+                    tooltip: {
+                        mode: 'index',
+                        intersect: false
+                    }
+                }
+            }
+        });
+    });
+</script>
+
+</body>
+</html>

@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Smart Greenhouse Cluster Management Platform</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <h1>Smart Greenhouse Cluster Management Platform</h1>
+
+    <div id="global-controls" style="display: none;">
+        <h4>Global Control Panel</h4>
+        <div class="global-buttons">
+            <button class="global-btn" data-action="mode" data-value="auto">Set All to Automatic</button>
+            <button class="global-btn" data-action="mode" data-value="manual">Set All to Manual</button>
+            <button class="global-btn" data-action="light" data-value="ON">Turn All Lights On</button>
+            <button class="global-btn" data-action="light" data-value="OFF">Turn All Lights Off</button>
+        </div>
+        <div class="global-weather">
+            <button id="refresh-weather-btn">Refresh Weather Suggestions</button>
+            <p id="weather-result">Click the button to get the latest weather-linked recommendations.</p>
+        </div>
+    </div>
+
+    <div class="greenhouse-container" id="greenhouse-container">
+        <div class="loader" id="loading-indicator">
+            <div class="spinner"></div>
+            <p>Connecting and waiting for the first data from greenhouse nodes...</p>
+        </div>
+    </div>
+
+    <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+</body>
+</html>

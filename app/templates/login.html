@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f0f2f5;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+        }
+
+        .login-container {
+            background: white;
+            padding: 2rem;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            width: 90%;
+            max-width: 400px;
+        }
+
+        h2 {
+            text-align: center;
+            margin-bottom: 1.5rem;
+        }
+
+        input[type="text"],
+        input[type="password"] {
+            width: 100%;
+            padding: 0.75rem;
+            margin-bottom: 1rem;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            font-size: 1rem;
+        }
+
+        button {
+            width: 100%;
+            padding: 0.75rem;
+            background-color: #007BFF;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 1rem;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+
+        .message {
+            text-align: center;
+            margin-top: 1rem;
+            color: red;
+        }
+    </style>
+</head>
+<body>
+<div class="login-container">
+    <h2>Login</h2>
+    <form id="login-form">
+        <input type="text" id="username" name="username" value="root" placeholder="Username" required />
+        <input type="password" id="password" name="password" value="123456" placeholder="Password" required />
+        <button type="submit">Sign In</button>
+    </form>
+    <div class="message" id="message"></div>
+</div>
+
+<script>
+    const form = document.getElementById('login-form');
+    const message = document.getElementById('message');
+
+    form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const username = form.username.value;
+        const password = form.password.value;
+
+        try {
+            console.log("=====")
+            const response = await fetch('http://127.0.0.1:5000/realLogin', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ username, password })
+            });
+
+            const result = await response.json();
+            console.log(JSON.stringify(result))
+            if (response.ok) {
+                if (result.success) {
+                    message.style.color = 'green';
+                    message.textContent = 'Login successful!';
+                    window.location.href = "http://127.0.0.1:5000/home"
+                } else {
+                    message.textContent = result.message || 'Login failed.';
+                }
+
+                // TODO: redirect to dashboard
+            } else {
+                message.textContent = result.error || 'Login failed.';
+            }
+        } catch (err) {
+            console.log(JSON.stringify(err))
+            message.textContent = 'Network error.';
+        }
+    });
+</script>
+</body>
+</html>

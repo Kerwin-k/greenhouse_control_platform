@@ -5,7 +5,7 @@
 #include <ESP32Servo.h>
 
 // --- 1. 配置区域 ---
-#define PUBLISH_INTERVAL_MS 2000
+#define PUBLISH_INTERVAL_MS 5000
 #define WIFI_SSID "Wokwi-GUEST"
 #define WIFI_PASSWORD ""
 #define MQTT_BROKER "broker-cn.emqx.io"
@@ -34,9 +34,9 @@ String fanState = "OFF";
 String sprinklerState = "OFF";
 
 int servoPos = 0;
-int servoDir = 1;
+int servoDir = 5;
 long lastServoMove = 0;
-const int servoSpeed = 25;
+const int servoSpeed = 5;
 
 // --- 5. 函数声明 ---
 void callback(char* topic, byte* payload, unsigned int length);
@@ -125,12 +125,8 @@ void callback(char* topic, byte* payload, unsigned int length) {
 }
 
 void loop() {
-  if (!client.connected()) {
-    reconnect();
-  }
-  client.loop();
-
   long now = millis();
+  usleep(100 * 1000);
 
   if (fanState == "ON") {
     if (now - lastServoMove > servoSpeed) {
@@ -148,8 +144,14 @@ void loop() {
     }
   }
 
+    if (client.connected())
+        client.loop();
+
   if (now - lastMsg > PUBLISH_INTERVAL_MS) {
     lastMsg = now;
+    if (!client.connected()) {
+        reconnect();
+    }
 
     float h = dht.readHumidity();
     float t = dht.readTemperature();
@@ -161,12 +163,14 @@ void loop() {
     }
 
     StaticJsonDocument<512> telemetry_doc;
+    telemetry_doc["cmd"] = "sensor";
     telemetry_doc["temperature"] = t;
     telemetry_doc["humidity"] = h;
     String telemetry_output;
     serializeJson(telemetry_doc, telemetry_output);
 
     StaticJsonDocument<512> status_doc;
+    status_doc["cmd"] = "status";
     status_doc["door"] = doorStatus;
     status_doc["light_state"] = lightState;
     status_doc["fan_state"] = fanState;
