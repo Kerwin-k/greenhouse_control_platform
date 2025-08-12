@@ -83,7 +83,7 @@
 
         try {
             console.log("=====")
-            const response = await fetch('http://127.0.0.1:5000/realLogin', {
+            const response = await fetch('/realLogin', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
@@ -97,7 +97,7 @@
                 if (result.success) {
                     message.style.color = 'green';
                     message.textContent = 'Login successful!';
-                    window.location.href = "http://127.0.0.1:5000/home"
+                    window.location.href = "/home"
                 } else {
                     message.textContent = result.message || 'Login failed.';
                 }

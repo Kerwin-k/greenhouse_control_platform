@@ -13,10 +13,12 @@ from ..services.SQLiteManager import SQLiteManager
 # --- 全局状态字典 ---
 greenhouses_data = {}
 greenhouse_modes = {}
+greenhouse_last_seen = {}  # 新增：用于心跳检测
 
 # --- MQTT 设置 ---
 MQTT_BROKER = "broker-cn.emqx.io"
 MQTT_PORT = 8083
+OFFLINE_THRESHOLD_SECONDS = 30  # 设备超过30秒未上报数据则视为离线
 
 
 class FlaskServer:
@@ -41,8 +43,8 @@ class FlaskServer:
         # 注册所有路由和事件
         self.setup_routes_and_events()
 
-        # 启动后台自动化任务
-        self.start_auto_mode_checker()
+        # 启动后台任务
+        self.start_background_tasks()
 
     def initialize_database(self):
         db = SQLiteManager("greenhouse_main.db")
@@ -91,11 +93,16 @@ class FlaskServer:
             gh_id = msg.topic.split('/')[3]
             payload = json.loads(msg.payload.decode())
 
+            # 更新心跳时间
+            if gh_id not in greenhouses_data:
+                print(f"新设备上线: {gh_id}")
+            greenhouse_last_seen[gh_id] = time.time()
+
             if gh_id not in greenhouses_data:
                 greenhouses_data[gh_id] = {}
+
             greenhouses_data[gh_id].update(payload)
 
-            # 如果消息包含温湿度，则存入历史数据库
             if 'temperature' in payload and 'humidity' in payload:
                 self.db.insert("sensor_history", {
                     "gh_id": gh_id,
@@ -103,13 +110,12 @@ class FlaskServer:
                     "humidity": payload['humidity']
                 })
 
-            # 通过SocketIO将最新数据推送到前端
             self.socketio.emit('update_data', greenhouses_data)
         except Exception as e:
             print(f"Error processing MQTT message: {e}")
 
     def setup_routes_and_events(self):
-        # --- HTTP 路由 ---
+        # HTTP 路由
         self.app.add_url_rule('/', 'root', self.root)
         self.app.add_url_rule('/login', 'login', self.login, methods=['GET'])
         self.app.add_url_rule('/realLogin', 'real_login', self.real_login, methods=['POST'])
@@ -117,8 +123,7 @@ class FlaskServer:
         self.app.add_url_rule('/status', 'status', self.status)
         self.app.add_url_rule('/stats', 'stats', self.stats)
         self.app.add_url_rule('/logout', 'logout', self.logout)
-
-        # --- SocketIO 事件 ---
+        # SocketIO 事件
         self.socketio.on_event('connect', self.handle_connect)
         self.socketio.on_event('control_event', self.handle_control_event)
         self.socketio.on_event('mode_change_event', self.handle_mode_change)
@@ -127,12 +132,9 @@ class FlaskServer:
         self.socketio.on_event('request_global_weather', self.handle_weather_action)
 
     def run(self, host, port):
-        # 在后台线程中运行MQTT客户端
         threading.Thread(target=self.mqtt_client.loop_forever, daemon=True).start()
-        # 运行Web服务器
         self.socketio.run(self.app, host=host, port=port, debug=True, allow_unsafe_werkzeug=True, use_reloader=False)
 
-    # --- 路由函数实现 ---
     def root(self):
         return redirect(url_for('login'))
 
@@ -170,14 +172,13 @@ class FlaskServer:
                 data[gh_id] = {'temperature': [], 'humidity': [], 'time': []}
             data[gh_id]['temperature'].append(temp)
             data[gh_id]['humidity'].append(hum)
-            data[gh_id]['time'].append(time_str.split(" ")[1])  # 只取时间部分
+            data[gh_id]['time'].append(time_str.split(" ")[1])
         return render_template('stats.html', data=data)
 
     def logout(self):
         session.pop('username', None)
         return redirect(url_for('login'))
 
-    # --- SocketIO 事件函数实现 ---
     def handle_connect(self):
         print('A client has connected via SocketIO!')
         self.socketio.emit('mode_updated', greenhouse_modes)
@@ -222,10 +223,27 @@ class FlaskServer:
         else:
             self.socketio.emit('global_weather_result', {'message': 'Failed to get weather data.'})
 
-    # --- 后台自动化任务 ---
-    def check_auto_mode_task(self):
+    def background_task(self):
+        """统一的后台任务，同时处理自动化和离线检测"""
         while True:
             with self.app.app_context():
+                # --- 1. 离线检测 ---
+                now = time.time()
+                offline_devices = []
+                for gh_id, last_seen in list(greenhouse_last_seen.items()):
+                    if now - last_seen > OFFLINE_THRESHOLD_SECONDS:
+                        offline_devices.append(gh_id)
+
+                if offline_devices:
+                    print(f"检测到离线设备: {offline_devices}")
+                    for gh_id in offline_devices:
+                        greenhouses_data.pop(gh_id, None)
+                        greenhouse_modes.pop(gh_id, None)
+                        greenhouse_last_seen.pop(gh_id, None)
+                    # 广播最新的在线设备列表
+                    self.socketio.emit('update_data', greenhouses_data)
+
+                # --- 2. 自动化模式检查 ---
                 for gh_id, mode in list(greenhouse_modes.items()):
                     if mode == 'auto' and gh_id in greenhouses_data:
                         data = greenhouses_data[gh_id]
@@ -238,7 +256,9 @@ class FlaskServer:
                             sprinkler_command = "ON" if humidity < 40.0 else "OFF"
                             self.mqtt_client.publish(f"ucsi/mdt1001/greenhouse/{gh_id}/control/sprinkler",
                                                      json.dumps({"command": sprinkler_command}))
+
             time.sleep(5)
 
-    def start_auto_mode_checker(self):
-        threading.Thread(target=self.check_auto_mode_task, daemon=True).start()
+    def start_background_tasks(self):
+        print("启动后台任务 (自动化 & 离线检测)...")
+        threading.Thread(target=self.background_task, daemon=True).start()

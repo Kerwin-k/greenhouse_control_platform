@@ -247,3 +247,24 @@ input:checked + .slider:before {
     color: #333;
     min-height: 1.2em; /* 避免刷新时跳动 */
 }
+/* --- 新增的页面导航样式 --- */
+.page-nav {
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+.nav-btn {
+    text-decoration: none;
+    padding: 8px 20px;
+    margin: 0 10px;
+    border-radius: 5px;
+    background-color: #007BFF;
+    color: white;
+    font-weight: bold;
+    transition: background-color 0.2s;
+    display: inline-block;
+}
+
+.nav-btn:hover {
+    background-color: #0056b3;
+}
