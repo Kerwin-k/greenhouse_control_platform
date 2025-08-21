@@ -2,7 +2,7 @@ import requests
 
 # --- 配置 ---
 # 替换为自己的Key
-API_KEY = "96e1b6c6ec74d11799effbd674bbf10e"
+API_KEY = ""
 CITY = "Kuala Lumpur, MY"  # 您所在的城市
 
 # OpenWeatherMap API的URL
